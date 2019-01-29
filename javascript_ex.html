@@ -17,6 +17,32 @@
 		<input type="button" value="hi" onclick="alert('hi')">
 		<input type="text" onchange="alert('changed')">
 		<input type="text" onkeydown="alert('key down!')">
+
+
+		<script>
+	  	  var coworkers = {
+	        "programmer":"egoing",
+	        "designer":"leezche"
+	      };
+	      document.write("programmer : "+coworkers.programmer+"<br>");
+	      document.write("designer : "+coworkers.designer+"<br>");
+	      coworkers.bookkeeper = "duru";
+	      document.write("bookkeeper : "+coworkers.bookkeeper+"<br>");
+	      coworkers["data scientist"] = "taeho";
+	      document.write("data scientist : "+coworkers["data scientist"]+"<br>");
+	  				
+
+			coworkers.showAll = function(){
+			    for(var key in this){
+			        document.write(key+' : '+this[key]+'<br>');
+			    }
+			}
+
+			coworkers.showAll();
+
+		</script>
+		
+
 	</body>
 </html>
 
