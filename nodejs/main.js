@@ -60,6 +60,8 @@ var app = http.createServer(function(request,response){
 			    response.end(template);
 	    	})
     	}
+
+    // 사용자의 글 작성 기능
 	}else if(pathName === '/create'){
 		var title = "Create"
 		var template = templateHTML(title, ordered_files, 
@@ -69,9 +71,10 @@ var app = http.createServer(function(request,response){
 			<p><input type="submit" value="확인"></p>
 			</form>`);
 			
-		response.writeHead(200); // HTTP status code
+		response.writeHead(200); 
 	    response.end(template);
 
+	// 사용자가 작성한 글 POST 정보 받아서 파일생성 및 리다이렉트
 	}else if(pathName === '/create_process'){
 		var body = '';
 
@@ -84,11 +87,14 @@ var app = http.createServer(function(request,response){
 			var post = qs.parse(body); // post 변수에 POST 형태로 보낸 정보가 담겨있을 것
 			var title = post.title;
 			var description = post.description;
+
+			fs.writeFile(`data/${title}`, description, 'utf8', 
+				function(err){
+					response.writeHead(302,
+						{Location:`/?id=${title}`}); // redirection to the created page
+				    response.end("success!");
+				});
 		});
-
-		response.writeHead(200); // HTTP status code
-	    response.end("success!");
-
 	}else{
 		response.writeHead(404); 
 	    response.end("Not found");	
