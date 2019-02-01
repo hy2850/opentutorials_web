@@ -4,7 +4,8 @@ var fs = require('fs');
 var url = require('url');
 var qs = require('querystring')
 
-function templateHTML(title, list, body){
+// control : create 와 update가 나타나게 할지 말지 결정 
+function templateHTML(title, list, body, control){
 	return `<!doctype html>
 			<html>
 			<head>
@@ -16,7 +17,7 @@ function templateHTML(title, list, body){
 			  <ol>
 			  ${list}
 			  </ol>
-			  <a href="/create">create</a>
+			  ${control}
 			  ${body}
 			</body>
 			</html>`;
@@ -48,13 +49,14 @@ var app = http.createServer(function(request,response){
     		var title = "Main page";
     		var description = "Hello~! Welcome!";
 
-			var template = templateHTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`);
+			var template = templateHTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`, '<a href="/create">create</a>');
 			
 			response.writeHead(200); // HTTP status code
 		    response.end(template);
 		}else{
 	    	fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
-		    	var template = templateHTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`);
+		    	var template = templateHTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`,
+		    		`<a href="/create">create</a> <a href="/update?id=${title}">update</a>`);
 				
 				response.writeHead(200); // HTTP status code
 			    response.end(template);
@@ -69,7 +71,7 @@ var app = http.createServer(function(request,response){
 			<p><input type="text" name="title" placeholder = "title"></p>
 			<p><textarea name="description" placeholder = "description"></textarea></p>
 			<p><input type="submit" value="확인"></p>
-			</form>`);
+			</form>`, '');
 			
 		response.writeHead(200); 
 	    response.end(template);
