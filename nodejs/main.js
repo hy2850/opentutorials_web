@@ -30,8 +30,8 @@ var app = http.createServer(function(request,response){
     //console.log("url : " + _url);	
 
     var queryData = url.parse(_url, true).query;
-    //console.log("queryData : ");
-    //console.log(url.parse(_url, true));
+    console.log("queryData : ");
+    console.log(url.parse(_url, true));
 
     var pathName = url.parse(_url, true).pathname;
     var title = queryData.id;
@@ -67,7 +67,7 @@ var app = http.createServer(function(request,response){
 	}else if(pathName === '/create'){
 		var title = "Create"
 		var template = templateHTML(title, ordered_files, 
-			`<form action = "http://localhost:3000/create_process" method = "POST">
+			`<form action = "/create_process" method = "POST">
 			<p><input type="text" name="title" placeholder = "title"></p>
 			<p><textarea name="description" placeholder = "description"></textarea></p>
 			<p><input type="submit" value="확인"></p>
@@ -97,7 +97,53 @@ var app = http.createServer(function(request,response){
 				    response.end("success!");
 				});
 		});
-	}else{
+
+	// 글 수정 기능
+	}else if(pathName === '/update'){
+		fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
+				// To notify our browser what we are trying to update, use input tag type "hidden" and send 
+		    	var template = templateHTML(title, ordered_files, 
+		    		`<form action = "/update_process" method = "POST">
+		    		<input type="hidden" name="id" value=${title}>
+					<p><input type="text" name="title" value=${title}></p>
+					<p><textarea name="description" placeholder="description">${description}</textarea></p>
+					<p><input type="submit" value="확인"></p>
+					</form>`, '');
+				
+				response.writeHead(200); // HTTP status code
+			    response.end(template);
+			});
+	}else if(pathName === '/update_process'){
+		var body = '';
+
+		// 조각된 데이터를 하나씩 수신할때 마다, callback 함수의 인자로 넘겨줌
+		request.on('data', function(data){
+			body += data;
+		});
+		// 더 이상 들어올 정보가 없으면, 다음 callback 함수 실행 후 정보 수신 종료
+		request.on('end', function(){
+			var post = qs.parse(body); // post 변수에 POST 형태로 보낸 정보가 담겨있을 것
+			var id = post.id;
+			var title = post.title;
+			var description = post.description;
+			
+			// id라는 이름을 가진 문서를 새로운 제목인 title로 이름 변경
+			fs.rename(`data/${id}`, `data/${title}`, function(err){
+
+			});
+
+			// 내용도 변경
+			fs.writeFile(`data/${title}`, description, 'utf8', 
+				function(err){
+					response.writeHead(302,
+						{Location:`/?id=${title}`}); // redirection to the created page
+				    response.end("success!");
+				});
+
+			console.log(post);
+		});
+	}
+	else{
 		response.writeHead(404); 
 	    response.end("Not found");	
 	}
