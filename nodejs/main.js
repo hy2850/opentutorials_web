@@ -23,6 +23,13 @@ function templateHTML(title, list, body, control){
 			</html>`;
 		}
 
+/*
+function confirm_delete(){
+	var result = confirm("Sure you want to delete?");
+	return result;
+}
+*/
+
 // request : 요청할 때 웹 브라우저가 보내는 정보들
 // response : 응답할 때 우리가 웹 브라우저에게 전송할 정보들
 var app = http.createServer(function(request,response){
@@ -35,6 +42,7 @@ var app = http.createServer(function(request,response){
 
     var pathName = url.parse(_url, true).pathname;
     var title = queryData.id;
+    console.log(title);
 
 	// Reading files in the 'data' directory and writing the names in the list
 	var ordered_files = "";
@@ -56,7 +64,17 @@ var app = http.createServer(function(request,response){
 		}else{
 	    	fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
 		    	var template = templateHTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`,
-		    		`<a href="/create">create</a> <a href="/update?id=${title}">update</a>`);
+		    		`<a href="/create">create</a> <a href="/update?id=${title}">update</a>
+		    		<form action="/delete_process" methods="POST" onsubmit="return confirm_delete()">
+		    			<input type="hidden" name="id" value=${title}>
+		    			<input type="submit" value="delete">
+		    		</form>
+		    		<script>
+					function confirm_delete(){
+						var result = confirm("Sure you want to delete?");
+						return result;
+					}
+					</script>`);
 				
 				response.writeHead(200); // HTTP status code
 			    response.end(template);
@@ -68,9 +86,9 @@ var app = http.createServer(function(request,response){
 		var title = "Create"
 		var template = templateHTML(title, ordered_files, 
 			`<form action = "/create_process" method = "POST">
-			<p><input type="text" name="title" placeholder = "title"></p>
-			<p><textarea name="description" placeholder = "description"></textarea></p>
-			<p><input type="submit" value="확인"></p>
+				<p><input type="text" name="title" placeholder = "title"></p>
+				<p><textarea name="description" placeholder = "description"></textarea></p>
+				<p><input type="submit" value="확인"></p>
 			</form>`, '');
 			
 		response.writeHead(200); 
@@ -102,12 +120,13 @@ var app = http.createServer(function(request,response){
 	}else if(pathName === '/update'){
 		fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
 				// To notify our browser what we are trying to update, use input tag type "hidden" and send 
+		    	console.log(title);
 		    	var template = templateHTML(title, ordered_files, 
 		    		`<form action = "/update_process" method = "POST">
-		    		<input type="hidden" name="id" value=${title}>
-					<p><input type="text" name="title" value=${title}></p>
-					<p><textarea name="description" placeholder="description">${description}</textarea></p>
-					<p><input type="submit" value="확인"></p>
+			    		<input type="hidden" name="id" value=${title}>
+						<p><input type="text" name="title" value=${title}></p>
+						<p><textarea name="description" placeholder="description">${description}</textarea></p>
+						<p><input type="submit" value="확인"></p>
 					</form>`, '');
 				
 				response.writeHead(200); // HTTP status code
@@ -116,11 +135,9 @@ var app = http.createServer(function(request,response){
 	}else if(pathName === '/update_process'){
 		var body = '';
 
-		// 조각된 데이터를 하나씩 수신할때 마다, callback 함수의 인자로 넘겨줌
 		request.on('data', function(data){
 			body += data;
 		});
-		// 더 이상 들어올 정보가 없으면, 다음 callback 함수 실행 후 정보 수신 종료
 		request.on('end', function(){
 			var post = qs.parse(body); // post 변수에 POST 형태로 보낸 정보가 담겨있을 것
 			var id = post.id;
@@ -143,7 +160,36 @@ var app = http.createServer(function(request,response){
 			console.log(post);
 		});
 	}
-	else{
+
+	//글 삭제 기능
+	else if(pathName === '/delete_process'){
+		var body = '';
+
+		request.on('data', function(data){
+			body += data;
+		});
+
+		request.on('end', function(){
+			var post = qs.parse(body); // post 변수에 POST 형태로 보낸 정보가 담겨있을 것
+			console.log(post);
+
+			response.writeHead(200); // HTTP status code
+		    response.end("Success!");
+
+			/*
+			var title = post.title;
+			var description = post.description;
+
+			fs.writeFile(`data/${title}`, description, 'utf8', 
+				function(err){
+					response.writeHead(302,
+						{Location:`/?id=${title}`}); // redirection to the created page
+				    response.end("success!");
+				});
+			*/
+		});
+
+	}else{
 		response.writeHead(404); 
 	    response.end("Not found");	
 	}
