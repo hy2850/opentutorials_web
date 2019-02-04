@@ -4,7 +4,10 @@ var fs = require('fs');
 var url = require('url');
 var qs = require('querystring')
 
-// control : create 와 update가 나타나게 할지 말지 결정 
+// title : 웹페이지의 title
+// list : data 폴더에 있는 문서들 리스트
+// body : 본문
+// control : create 와 update 버튼이 나타나게 할지 말지 결정
 function templateHTML(title, list, body, control){
 	return `<!doctype html>
 			<html>
@@ -30,41 +33,45 @@ function confirm_delete(){
 }
 */
 
-// request : 요청할 때 웹 브라우저가 보내는 정보들
-// response : 응답할 때 우리가 웹 브라우저에게 전송할 정보들
+// <Parameter description>
+// request : 사용자가 웹 브라우저에게 요청을 보낼 때 보내는 정보들
+// response : 웹 브라우저가 응답할 때 사용자에게 보낼 정보들
 var app = http.createServer(function(request,response){
+	// Parsing GET requests : http://book.mixu.net/node/ch10.html#10-1-1-2-parsing-get-requests
     var _url = request.url;
-    //console.log("url : " + _url);	
+    console.log("request URL : " + _url);
 
-    var queryData = url.parse(_url, true).query;
-    console.log("queryData : ");
-    console.log(url.parse(_url, true));
+    var parsedURL = url.parse(_url, true);
+    console.log("parsed URL : ");
+    console.log(parsedURL);
 
-    var pathName = url.parse(_url, true).pathname;
+    var pathName = parsedURL.pathname;
+    var queryData = parsedURL.query;
     var title = queryData.id;
-    console.log(title);
+    //console.log(title);
 
 	// Reading files in the 'data' directory and writing the names in the list
 	var ordered_files = "";
 	var files = fs.readdirSync("./data");
 	files.forEach(file => {
-		ordered_files = ordered_files.concat(`<li><a href="/?id=${file}">${file}</a></li>`);	  	
+		ordered_files = ordered_files.concat(`<li><a href="/?id=${file}">${file}</a></li>`);
 	  	//console.log(ordered_files);
 	});
 
 	if(pathName === '/'){
-    	if(queryData.id === undefined){
+    	if(queryData.id === undefined){ // Main page has no query string, so undefined
     		var title = "Main page";
     		var description = "Hello~! Welcome!";
 
 			var template = templateHTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`, '<a href="/create">create</a>');
-			
+
 			response.writeHead(200); // HTTP status code
 		    response.end(template);
 		}else{
 	    	fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
 		    	var template = templateHTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`,
 		    		`<a href="/create">create</a> <a href="/update?id=${title}">update</a>
+		    		<!-- Delete function should be implemented using POST method in form tag. If it is implemented using simple URL hyperlink tag, the delete URL may be abused by unauthorized user, deleting the data by accesing the delete page through URL copy and paste. -->
 		    		<form action="/delete_process" methods="POST" onsubmit="return confirm_delete()">
 		    			<input type="hidden" name="id" value=${title}>
 		    			<input type="submit" value="delete">
@@ -75,7 +82,7 @@ var app = http.createServer(function(request,response){
 						return result;
 					}
 					</script>`);
-				
+
 				response.writeHead(200); // HTTP status code
 			    response.end(template);
 	    	})
@@ -84,16 +91,17 @@ var app = http.createServer(function(request,response){
     // 사용자의 글 작성 기능
 	}else if(pathName === '/create'){
 		var title = "Create"
-		var template = templateHTML(title, ordered_files, 
+		var template = templateHTML(title, ordered_files,
 			`<form action = "/create_process" method = "POST">
 				<p><input type="text" name="title" placeholder = "title"></p>
 				<p><textarea name="description" placeholder = "description"></textarea></p>
 				<p><input type="submit" value="확인"></p>
 			</form>`, '');
-			
-		response.writeHead(200); 
+
+		response.writeHead(200);
 	    response.end(template);
 
+	// Parsing POST requests : http://book.mixu.net/node/ch10.html#10-1-1-3-parsing-post-requests
 	// 사용자가 작성한 글 POST 정보 받아서 파일생성 및 리다이렉트
 	}else if(pathName === '/create_process'){
 		var body = '';
@@ -108,7 +116,7 @@ var app = http.createServer(function(request,response){
 			var title = post.title;
 			var description = post.description;
 
-			fs.writeFile(`data/${title}`, description, 'utf8', 
+			fs.writeFile(`data/${title}`, description, 'utf8',
 				function(err){
 					response.writeHead(302,
 						{Location:`/?id=${title}`}); // redirection to the created page
@@ -119,16 +127,15 @@ var app = http.createServer(function(request,response){
 	// 글 수정 기능
 	}else if(pathName === '/update'){
 		fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
-				// To notify our browser what we are trying to update, use input tag type "hidden" and send 
-		    	console.log(title);
-		    	var template = templateHTML(title, ordered_files, 
+		    	var template = templateHTML(title, ordered_files,
 		    		`<form action = "/update_process" method = "POST">
+						<!-- To notify our browser what we are trying to update, use input tag type "hidden" and send -->
 			    		<input type="hidden" name="id" value=${title}>
 						<p><input type="text" name="title" value=${title}></p>
 						<p><textarea name="description" placeholder="description">${description}</textarea></p>
 						<p><input type="submit" value="확인"></p>
 					</form>`, '');
-				
+
 				response.writeHead(200); // HTTP status code
 			    response.end(template);
 			});
@@ -143,14 +150,14 @@ var app = http.createServer(function(request,response){
 			var id = post.id;
 			var title = post.title;
 			var description = post.description;
-			
+
 			// id라는 이름을 가진 문서를 새로운 제목인 title로 이름 변경
 			fs.rename(`data/${id}`, `data/${title}`, function(err){
 
 			});
 
 			// 내용도 변경
-			fs.writeFile(`data/${title}`, description, 'utf8', 
+			fs.writeFile(`data/${title}`, description, 'utf8',
 				function(err){
 					response.writeHead(302,
 						{Location:`/?id=${title}`}); // redirection to the created page
@@ -176,11 +183,12 @@ var app = http.createServer(function(request,response){
 			response.writeHead(200); // HTTP status code
 		    response.end("Success!");
 
+		    //fs.unlink
 			/*
 			var title = post.title;
 			var description = post.description;
 
-			fs.writeFile(`data/${title}`, description, 'utf8', 
+			fs.writeFile(`data/${title}`, description, 'utf8',
 				function(err){
 					response.writeHead(302,
 						{Location:`/?id=${title}`}); // redirection to the created page
@@ -190,8 +198,8 @@ var app = http.createServer(function(request,response){
 		});
 
 	}else{
-		response.writeHead(404); 
-	    response.end("Not found");	
+		response.writeHead(404);
+	    response.end("Not found");
 	}
 });
 app.listen(3000);
