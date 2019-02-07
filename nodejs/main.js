@@ -12,8 +12,8 @@ var template = require('./lib/template.js')
 var path = require('path');
 var sanitizeHtml = require('sanitize-html');
 
-// request : 요청할 때 웹 브라우저가 보내는 정보들
-// response : 응답할 때 우리가 웹 브라우저에게 전송할 정보들
+// request : 웹브라우저로 들어온 요청에 대한 여러 정보 담고 있음
+// response : 사용자에게 필요한 정보를(아래 코드를 통해 설정) 전달해주는 매개체 같은 것
 var app = http.createServer(function(request,response){
     var _url = request.url;
     //console.log("url : " + _url);	
