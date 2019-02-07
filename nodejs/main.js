@@ -8,6 +8,8 @@ var qs = require('querystring');
 // 모듈화 (하위폴더 lib에 저장)
 var template = require('./lib/template.js')
 
+// 보안
+var path = require('path');
 
 // request : 요청할 때 웹 브라우저가 보내는 정보들
 // response : 응답할 때 우리가 웹 브라우저에게 전송할 정보들
@@ -23,6 +25,10 @@ var app = http.createServer(function(request,response){
     var title = queryData.id;
     console.log("title : ", title);
 
+    // (보안) 사용자가 URL을 통해 우리 컴퓨터의 디렉토리에 접근하는 것을 방지
+	if (queryData.id != null)
+		var filteredId = path.parse(queryData.id).base; // Main page does not have query string, so string assignment is needed to prevent null argument error happening below.
+
 	// Reading files in the 'data' directory and writing the names in the list
 	var ordered_files = template.list();
 
@@ -36,7 +42,7 @@ var app = http.createServer(function(request,response){
 			response.writeHead(200); // HTTP status code
 		    response.end(page);
 		}else{
-	    	fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
+	    	fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
 		    	var page = template.HTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`,
 		    		`<a href="/create">create</a> <a href="/update?id=${title}">update</a>
 		    		<form action="delete_process" method="POST" onsubmit="return confirm_delete()">
@@ -92,9 +98,8 @@ var app = http.createServer(function(request,response){
 
 	// 글 수정 기능
 	}else if(pathName === '/update'){
-		fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
+		fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
 				// To notify our browser what we are trying to update, use input tag type "hidden" and send 
-		    	console.log(title);
 		    	var page = template.HTML(title, ordered_files, 
 		    		`<form action = "/update_process" method = "POST">
 			    		<input type="hidden" name="id" value="${title}">
@@ -147,7 +152,9 @@ var app = http.createServer(function(request,response){
 			var post = qs.parse(body); // post 변수에 POST 형태로 보낸 정보가 담겨있을 것
 			var id = post.id;
 
-			fs.unlink(`data/${id}`, function(err){
+			// (보안) 사용자가 URL을 통해 우리 디렉토리에 접근하는 것 방지
+			var filteredID = path.parse(id).base;
+			fs.unlink(`data/${filteredID}`, function(err){
 				/*
 				alert("Deletion successful"); // 작동 X. 행동 후에 Browser에 alert popup이 뜨게 할 수는 없을까?
 	
