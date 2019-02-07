@@ -1,0 +1,4 @@
+Dirty HTML
+<script>
+location.href = "https://www.naver.com"
+</script>

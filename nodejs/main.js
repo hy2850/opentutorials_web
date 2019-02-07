@@ -10,6 +10,7 @@ var template = require('./lib/template.js')
 
 // 보안
 var path = require('path');
+var sanitizeHtml = require('sanitize-html');
 
 // request : 요청할 때 웹 브라우저가 보내는 정보들
 // response : 응답할 때 우리가 웹 브라우저에게 전송할 정보들
@@ -43,10 +44,13 @@ var app = http.createServer(function(request,response){
 		    response.end(page);
 		}else{
 	    	fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
-		    	var page = template.HTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`,
-		    		`<a href="/create">create</a> <a href="/update?id=${title}">update</a>
+	    		var sanitizedTitle = sanitizeHtml(title);
+	    		var sanitizedDescription = sanitizeHtml(description);
+
+		    	var page = template.HTML(sanitizedTitle, ordered_files, `<h2>${sanitizedTitle}</h2><p>${sanitizedDescription}</p>`,
+		    		`<a href="/create">create</a> <a href="/update?id=${sanitizedTitle}">update</a>
 		    		<form action="delete_process" method="POST" onsubmit="return confirm_delete()">
-		    			<input type="hidden" name="id" value="${title}">
+		    			<input type="hidden" name="id" value="${sanitizedTitle}">
 		    			<input type="submit" value="delete">
 		    		</form>
 		    		<script>
