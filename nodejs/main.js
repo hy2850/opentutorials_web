@@ -2,7 +2,8 @@
 var http = require('http');
 var fs = require('fs');
 var url = require('url');
-var qs = require('querystring')
+var qs = require('querystring');
+//var alert = require('alert-node');
 
 // control : create 와 update가 나타나게 할지 말지 결정 
 function templateHTML(title, list, body, control){
@@ -42,7 +43,7 @@ var app = http.createServer(function(request,response){
 
     var pathName = url.parse(_url, true).pathname;
     var title = queryData.id;
-    console.log(title);
+    console.log("title : ", title);
 
 	// Reading files in the 'data' directory and writing the names in the list
 	var ordered_files = "";
@@ -65,8 +66,8 @@ var app = http.createServer(function(request,response){
 	    	fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
 		    	var template = templateHTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`,
 		    		`<a href="/create">create</a> <a href="/update?id=${title}">update</a>
-		    		<form action="/delete_process" methods="POST" onsubmit="return confirm_delete()">
-		    			<input type="hidden" name="id" value=${title}>
+		    		<form action="delete_process" method="POST" onsubmit="return confirm_delete()">
+		    			<input type="hidden" name="id" value="${title}">
 		    			<input type="submit" value="delete">
 		    		</form>
 		    		<script>
@@ -123,8 +124,8 @@ var app = http.createServer(function(request,response){
 		    	console.log(title);
 		    	var template = templateHTML(title, ordered_files, 
 		    		`<form action = "/update_process" method = "POST">
-			    		<input type="hidden" name="id" value=${title}>
-						<p><input type="text" name="title" value=${title}></p>
+			    		<input type="hidden" name="id" value="${title}">
+						<p><input type="text" name="title" value="${title}"></p>
 						<p><textarea name="description" placeholder="description">${description}</textarea></p>
 						<p><input type="submit" value="확인"></p>
 					</form>`, '');
@@ -156,7 +157,7 @@ var app = http.createServer(function(request,response){
 						{Location:`/?id=${title}`}); // redirection to the created page
 				    response.end("success!");
 				});
-
+			
 			console.log(post);
 		});
 	}
@@ -171,22 +172,32 @@ var app = http.createServer(function(request,response){
 
 		request.on('end', function(){
 			var post = qs.parse(body); // post 변수에 POST 형태로 보낸 정보가 담겨있을 것
-			console.log(post);
+			var id = post.id;
 
-			response.writeHead(200); // HTTP status code
-		    response.end("Success!");
+			fs.unlink(`data/${id}`, function(err){
+				/*
+				alert("Deletion successful"); // 작동 X. 행동 후에 Browser에 alert popup이 뜨게 할 수는 없을까?
+	
+				response.writeHead(302,
+						{Location:`/`}); // redirection to the created page
+				*/
 
-			/*
-			var title = post.title;
-			var description = post.description;
-
-			fs.writeFile(`data/${title}`, description, 'utf8', 
-				function(err){
-					response.writeHead(302,
-						{Location:`/?id=${title}`}); // redirection to the created page
-				    response.end("success!");
-				});
-			*/
+				// Instead of trying to create pop-up in the browser from the server-side, pass the order to the front-end.
+				// https://groups.google.com/forum/#!topic/comp.lang.javascript/_3_BCYaE1ZA
+			    response.end(`<!doctype html>
+								<html>
+								<head>
+								  <title>Deletion Successful</title>
+								  <meta charset="utf-8">
+								</head>
+								<body>
+								  <script>
+								  	alert("Deletion successful");
+								  	window.location.href = '/';
+								  </script>
+								</body>
+								</html>`);
+			});
 		});
 
 	}else{
