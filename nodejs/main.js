@@ -5,35 +5,9 @@ var url = require('url');
 var qs = require('querystring');
 //var alert = require('alert-node');
 
-var template = {
-	// control : create 와 update가 나타나게 할지 말지 결정 
-	HTML : function(title, list, body, control){
-			return `<!doctype html>
-					<html>
-					<head>
-					  <title>WEB1 - ${title}</title>
-					  <meta charset="utf-8">
-					</head>
-					<body>
-					  <h1><a href="/">WEB</a></h1>
-					  ${list}
-					  ${control}
-					  ${body}
-					</body>
-					</html>`;
-			},
-	
-	// Takes array of file names (String) in the data directory and format HTML list out of them
-	list : function(){
-			var ordered_files = "";
-			var files = fs.readdirSync("./data");
-			files.forEach(file => {
-				ordered_files = ordered_files.concat(`<li><a href="/?id=${file}">${file}</a></li>`);
-			});
+// 모듈화 (하위폴더 lib에 저장)
+var template = require('./lib/template.js')
 
-			return "<ol>"+ordered_files+"</ol>";
-		}		
-}
 
 // request : 요청할 때 웹 브라우저가 보내는 정보들
 // response : 응답할 때 우리가 웹 브라우저에게 전송할 정보들
