@@ -65,10 +65,16 @@ var app = http.createServer(function(request,response){
 	    	fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
 		    	var template = templateHTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`,
 		    		`<a href="/create">create</a> <a href="/update?id=${title}">update</a>
-		    		<form action="/delete_process" methods="POST">
-		    			<input type="hidden" name="id" value="${title}">
+		    		<form action="/delete_process" methods="POST" onsubmit="return confirm_delete()">
+		    			<input type="hidden" name="id" value=${title}>
 		    			<input type="submit" value="delete">
-		    		</form>`);
+		    		</form>
+		    		<script>
+					function confirm_delete(){
+						var result = confirm("Sure you want to delete?");
+						return result;
+					}
+					</script>`);
 				
 				response.writeHead(200); // HTTP status code
 			    response.end(template);
@@ -104,9 +110,8 @@ var app = http.createServer(function(request,response){
 
 			fs.writeFile(`data/${title}`, description, 'utf8', 
 				function(err){
-					response.writeHead(200);
-					//response.writeHead(302,
-						//{Location:`/?id=${title}`}); // redirection to the created page
+					response.writeHead(302,
+						{Location:`/?id=${title}`}); // redirection to the created page
 				    response.end("success!");
 				});
 		});
@@ -153,6 +158,35 @@ var app = http.createServer(function(request,response){
 				});
 
 			console.log(post);
+		});
+	}
+
+	//글 삭제 기능
+	else if(pathName === '/delete_process'){
+		var body = '';
+
+		request.on('data', function(data){
+			body += data;
+		});
+
+		request.on('end', function(){
+			var post = qs.parse(body); // post 변수에 POST 형태로 보낸 정보가 담겨있을 것
+			console.log(post);
+
+			response.writeHead(200); // HTTP status code
+		    response.end("Success!");
+
+			/*
+			var title = post.title;
+			var description = post.description;
+
+			fs.writeFile(`data/${title}`, description, 'utf8', 
+				function(err){
+					response.writeHead(302,
+						{Location:`/?id=${title}`}); // redirection to the created page
+				    response.end("success!");
+				});
+			*/
 		});
 
 	}else{
