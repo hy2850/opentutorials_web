@@ -5,31 +5,35 @@ var url = require('url');
 var qs = require('querystring');
 //var alert = require('alert-node');
 
-// control : create 와 update가 나타나게 할지 말지 결정 
-function templateHTML(title, list, body, control){
-	return `<!doctype html>
-			<html>
-			<head>
-			  <title>WEB1 - ${title}</title>
-			  <meta charset="utf-8">
-			</head>
-			<body>
-			  <h1><a href="/">WEB</a></h1>
-			  <ol>
-			  ${list}
-			  </ol>
-			  ${control}
-			  ${body}
-			</body>
-			</html>`;
-		}
+var template = {
+	// control : create 와 update가 나타나게 할지 말지 결정 
+	HTML : function(title, list, body, control){
+			return `<!doctype html>
+					<html>
+					<head>
+					  <title>WEB1 - ${title}</title>
+					  <meta charset="utf-8">
+					</head>
+					<body>
+					  <h1><a href="/">WEB</a></h1>
+					  ${list}
+					  ${control}
+					  ${body}
+					</body>
+					</html>`;
+			},
+	
+	// Takes array of file names (String) in the data directory and format HTML list out of them
+	list : function(){
+			var ordered_files = "";
+			var files = fs.readdirSync("./data");
+			files.forEach(file => {
+				ordered_files = ordered_files.concat(`<li><a href="/?id=${file}">${file}</a></li>`);
+			});
 
-/*
-function confirm_delete(){
-	var result = confirm("Sure you want to delete?");
-	return result;
+			return "<ol>"+ordered_files+"</ol>";
+		}		
 }
-*/
 
 // request : 요청할 때 웹 브라우저가 보내는 정보들
 // response : 응답할 때 우리가 웹 브라우저에게 전송할 정보들
@@ -46,25 +50,20 @@ var app = http.createServer(function(request,response){
     console.log("title : ", title);
 
 	// Reading files in the 'data' directory and writing the names in the list
-	var ordered_files = "";
-	var files = fs.readdirSync("./data");
-	files.forEach(file => {
-		ordered_files = ordered_files.concat(`<li><a href="/?id=${file}">${file}</a></li>`);	  	
-	  	//console.log(ordered_files);
-	});
+	var ordered_files = template.list();
 
 	if(pathName === '/'){
     	if(queryData.id === undefined){
     		var title = "Main page";
     		var description = "Hello~! Welcome!";
 
-			var template = templateHTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`, '<a href="/create">create</a>');
+			var page = template.HTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`, '<a href="/create">create</a>');
 			
 			response.writeHead(200); // HTTP status code
-		    response.end(template);
+		    response.end(page);
 		}else{
 	    	fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
-		    	var template = templateHTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`,
+		    	var page = template.HTML(title, ordered_files, `<h2>${title}</h2><p>${description}</p>`,
 		    		`<a href="/create">create</a> <a href="/update?id=${title}">update</a>
 		    		<form action="delete_process" method="POST" onsubmit="return confirm_delete()">
 		    			<input type="hidden" name="id" value="${title}">
@@ -78,14 +77,14 @@ var app = http.createServer(function(request,response){
 					</script>`);
 				
 				response.writeHead(200); // HTTP status code
-			    response.end(template);
+			    response.end(page);
 	    	})
     	}
 
     // 사용자의 글 작성 기능
 	}else if(pathName === '/create'){
 		var title = "Create"
-		var template = templateHTML(title, ordered_files, 
+		var page = template.HTML(title, ordered_files, 
 			`<form action = "/create_process" method = "POST">
 				<p><input type="text" name="title" placeholder = "title"></p>
 				<p><textarea name="description" placeholder = "description"></textarea></p>
@@ -93,7 +92,7 @@ var app = http.createServer(function(request,response){
 			</form>`, '');
 			
 		response.writeHead(200); 
-	    response.end(template);
+	    response.end(page);
 
 	// 사용자가 작성한 글 POST 정보 받아서 파일생성 및 리다이렉트
 	}else if(pathName === '/create_process'){
@@ -122,7 +121,7 @@ var app = http.createServer(function(request,response){
 		fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
 				// To notify our browser what we are trying to update, use input tag type "hidden" and send 
 		    	console.log(title);
-		    	var template = templateHTML(title, ordered_files, 
+		    	var page = template.HTML(title, ordered_files, 
 		    		`<form action = "/update_process" method = "POST">
 			    		<input type="hidden" name="id" value="${title}">
 						<p><input type="text" name="title" value="${title}"></p>
@@ -131,7 +130,7 @@ var app = http.createServer(function(request,response){
 					</form>`, '');
 				
 				response.writeHead(200); // HTTP status code
-			    response.end(template);
+			    response.end(page);
 			});
 	}else if(pathName === '/update_process'){
 		var body = '';
