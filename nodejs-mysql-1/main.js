@@ -45,7 +45,10 @@ var app = http.createServer(function(request,response){
 
           // `id = ${queryData.id}` 라고 쓰면 URL을 통한 공격에 취약해지므로, '?' 를 이용한 변수 대입 이용
           // https://stackoverflow.com/questions/44266248/escape-question-mark-characters-as-placeholders-for-mysql-query-in-nodejs?rq=1
-          db.query(`SELECT * FROM topic WHERE id = ?`, [queryData.id], function(error2, topic){
+          db.query(`SELECT * FROM topic
+                    LEFT JOIN author
+                    ON topic.author_id = author.id
+                    WHERE topic.id = ?;`, [queryData.id], function(error2, topic){
             if(error2){throw error2;}
 
             console.log("Specific topic : ");
@@ -53,9 +56,11 @@ var app = http.createServer(function(request,response){
 
             var title = topic[0].title;
             var description = topic[0].description;
+            var author_name = topic[0].name;
             var list = template.list(topics);
             var html = template.HTML(title, list,
-              `<h2>${title}</h2>${description}`,
+              `<h2>${title}</h2>${description}
+              <p>written by ${author_name}</p>`,
               ` <a href="/create">create</a>
                 <a href="/update?id=${queryData.id}">update</a>
                 <form action="delete_process" method="post">
