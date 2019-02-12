@@ -80,7 +80,7 @@ var app = http.createServer(function(request,response){
 
         db.query('SELECT * FROM author', function(error2, authors){
           if(error2){throw error2;}
-          
+
           var title = 'WEB - create';
           var list = template.list(topics);
           var html = template.HTML(title, list, `
@@ -130,38 +130,42 @@ var app = http.createServer(function(request,response){
       db.query('SELECT * FROM topic', function(error, topics){
           if(error){throw error;}
 
-          // `id = ${queryData.id}` 라고 쓰면 URL을 통한 공격에 취약해지므로, '?' 를 이용한 변수 대입 이용
-          // https://stackoverflow.com/questions/44266248/escape-question-mark-characters-as-placeholders-for-mysql-query-in-nodejs?rq=1
           db.query(`SELECT * FROM topic WHERE id = ?`, [queryData.id], function(error2, topic){
             if(error2){throw error2;}
 
-            console.log("Specific topic : ");
-            console.log(topic);
-
-            var title = topic[0].title;
-            var description = topic[0].description;
             var id = topic[0].id;
             var list = template.list(topics);
-            var html = template.HTML(title, list,
-              `
-              <form action="/update_process" method="POST">
-                <input type="hidden" name="id" value="${id}">
-                <p><input type="text" name="title" placeholder="title" value="${title}"></p>
-                <p>
-                  <textarea name="description" placeholder="description">${description}</textarea>
-                </p>
-                <p>
-                  <input type="submit">
-                </p>
-              </form>
-              `,
-              `<a href="/create">create</a> <a href="/update?id=${id}">update</a>`
-            );
-            response.writeHead(200);
-            response.end(html);
+            db.query('SELECT * FROM author', function(error3, authors){
+              if(error3){throw error3;}
+
+              var title = topic[0].title;
+              var description = topic[0].description;
+              var id = topic[0].id;
+              var selected_author = topic[0].author_id; // Implementing already selected attribute for <select> tag
+              var list = template.list(topics);
+              var html = template.HTML(title, list,
+                `
+                <form action="/update_process" method="POST">
+                  <input type="hidden" name="id" value="${id}">
+                  <p><input type="text" name="title" placeholder="title" value="${title}"></p>
+                  <p>
+                    <textarea name="description" placeholder="description">${description}</textarea>
+                  </p>
+                  <p>
+                    ${template.authorSelect(authors, selected_author)}
+                  </p>
+                  <p>
+                    <input type="submit">
+                  </p>
+                </form>
+                `,
+                `<a href="/create">create</a> <a href="/update?id=${id}">update</a>`
+              );
+              response.writeHead(200);
+              response.end(html);
           });
         });
-
+      });
     } else if(pathname === '/update_process'){
       var body = '';
       request.on('data', function(data){
@@ -169,21 +173,19 @@ var app = http.createServer(function(request,response){
       });
       request.on('end', function(){
           var post = qs.parse(body);
-          var id = post.id;
-          var title = post.title;
-          var description = post.description;
 
           db.query(`
               UPDATE topic
               SET title = ?,
-                  description = ?
+                  description = ?,
+                  author_id = ?
               WHERE id = ?;
-              `, [title, description, id],
+              `, [post.title, post.description, post.author, post.id],
             function(error, result){
 
             if(error){throw error;}
 
-            response.writeHead(302, {Location: `/?id=${id}`});
+            response.writeHead(302, {Location: `/?id=${post.id}`});
             response.end();
           });
       });

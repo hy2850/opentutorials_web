@@ -26,11 +26,17 @@ module.exports = {
     list = list+'</ul>';
     return list;
   },
-  authorSelect:function(authors){
+  authorSelect:function(authors, selected){
     // Forming author name tags
     var tag = '';
     for(var i=0; i<authors.length; i++){
-      tag += `<option value = ${authors[i].id}>${authors[i].name}</option>`;
+      var author_id = authors[i].id;
+
+      // Including process that selects the author who wrote the article
+      if(author_id === selected)
+        tag += `<option value = ${author_id} selected>${authors[i].name}</option>`;        
+      else
+        tag += `<option value = ${author_id}>${authors[i].name}</option>`;
     }
 
     return `
